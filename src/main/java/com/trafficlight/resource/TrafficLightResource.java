@@ -32,6 +32,7 @@ public class TrafficLightResource {
     @Path("/state")
     @Operation(summary = "Get current status", description = "Public endpoint to read active state, mode, countdown, and timestamp")
     @APIResponse(responseCode = "200", description = "Current traffic light status")
+    @org.eclipse.microprofile.openapi.annotations.security.SecurityRequirements()
     public TrafficLightStatus getState() {
         return trafficLightService.getStatus();
     }
@@ -41,6 +42,7 @@ public class TrafficLightResource {
     @Produces(MediaType.SERVER_SENT_EVENTS)
     @RestStreamElementType(MediaType.APPLICATION_JSON)
     @Operation(summary = "Subscribe to live updates (SSE)", description = "Server-Sent Events stream delivering real-time state and timer updates")
+    @org.eclipse.microprofile.openapi.annotations.security.SecurityRequirements()
     public Multi<TrafficLightStatus> streamEvents() {
         return trafficLightService.getEventStream();
     }
@@ -49,6 +51,7 @@ public class TrafficLightResource {
     @Path("/state")
     @Secured
     @Operation(summary = "Set manual light state", description = "Secured: Sets the light to RED, AMBER, GREEN, FLASHING_AMBER, or OFF. Switches mode to MANUAL.")
+    @org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement(name = "ApiKeyAuth")
     @APIResponse(responseCode = "200", description = "State successfully updated")
     @APIResponse(responseCode = "401", description = "Unauthorized - Missing or invalid API key")
     public Response setState(StateChangeRequest request, @Context ContainerRequestContext context) {
@@ -66,6 +69,7 @@ public class TrafficLightResource {
     @Path("/mode")
     @Secured
     @Operation(summary = "Change operation mode", description = "Secured: Sets operation mode to AUTO, MANUAL, or EMERGENCY.")
+    @org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement(name = "ApiKeyAuth")
     @APIResponse(responseCode = "200", description = "Mode successfully updated")
     @APIResponse(responseCode = "401", description = "Unauthorized")
     public Response setMode(ModeChangeRequest request, @Context ContainerRequestContext context) {
@@ -83,6 +87,7 @@ public class TrafficLightResource {
     @Path("/next")
     @Secured
     @Operation(summary = "Advance to next phase", description = "Secured: Steps forward to the next logical phase in the sequence.")
+    @org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement(name = "ApiKeyAuth")
     @APIResponse(responseCode = "200", description = "Phase advanced successfully")
     @APIResponse(responseCode = "401", description = "Unauthorized")
     public Response advanceNext(@Context ContainerRequestContext context) {
