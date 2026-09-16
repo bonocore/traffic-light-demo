@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traffic Light Live Display - Smart City Traffic Monitor</title>
+  <meta name="description" content="Photorealistic live traffic light display with real-time Server-Sent Events updates and automatic cycle sequencing.">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/display.css">
+</head>
+<body>
+  <div class="display-container">
+    <!-- Ambient backlight spill -->
+    <div id="ambient-glow" class="ambient-glow red"></div>
+
+    <!-- Top Header -->
+    <header class="display-header">
+      <div class="brand">
+        <span class="brand-icon">🚦</span>
+        <h1 class="brand-title">Traffic Light Monitor</h1>
+      </div>
+
+      <div class="header-actions">
+        <div class="status-pill" id="connection-pill">
+          <div id="status-dot" class="status-dot connecting"></div>
+          <span id="status-text">Connecting...</span>
+        </div>
+        <a href="/control.html" class="btn-console" id="open-console-btn">
+          <span>⚙️ Operator Console</span>
+          <span>→</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Stage: Photorealistic Traffic Light Assembly -->
+    <main class="display-stage">
+      <div class="traffic-light-assembly">
+        <div class="pole-top"></div>
+
+        <div class="traffic-light-backplate">
+          <!-- RED UNIT -->
+          <div class="signal-unit" id="unit-red">
+            <div class="signal-visor"></div>
+            <div class="lens-bezel">
+              <div id="lens-red" class="lens red lit"></div>
+            </div>
+          </div>
+
+          <!-- AMBER UNIT -->
+          <div class="signal-unit" id="unit-amber">
+            <div class="signal-visor"></div>
+            <div class="lens-bezel">
+              <div id="lens-amber" class="lens amber"></div>
+            </div>
+          </div>
+
+          <!-- GREEN UNIT -->
+          <div class="signal-unit" id="unit-green">
+            <div class="signal-visor"></div>
+            <div class="lens-bezel">
+              <div id="lens-green" class="lens green"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pole-bottom"></div>
+      </div>
+
+      <!-- Telemetry HUD Panel -->
+      <section class="display-hud" aria-label="Traffic Telemetry HUD">
+        <div class="hud-state-badge">
+          <span class="hud-label">Phase Status</span>
+          <span id="hud-value" class="hud-value"><span style="color: #ff4d5a;">●</span> RED • STOP</span>
+        </div>
+
+        <div class="hud-divider"></div>
+
+        <div class="hud-timer">
+          <span class="hud-label">Next Phase</span>
+          <span id="hud-timer" class="hud-timer-digits">10s</span>
+        </div>
+
+        <div class="hud-divider"></div>
+
+        <div class="hud-state-badge">
+          <span class="hud-label">Control Mode</span>
+          <span id="hud-mode" class="hud-mode auto">AUTO</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="display-footer">
+      <span>Quarkus 3.x Reactive Microservice</span>
+      <span>•</span>
+      <a href="/q/swagger-ui" target="_blank" rel="noopener">OpenAPI / Swagger UI ↗</a>
+      <span>•</span>
+      <a href="/control.html">Admin Dashboard</a>
+    </footer>
+  </div>
+
+  <script src="/js/display.js"></script>
+</body>
+</html>

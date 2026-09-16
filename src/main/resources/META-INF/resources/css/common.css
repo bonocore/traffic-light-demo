@@ -1,0 +1,315 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@600;700;800&display=swap');
+
+:root {
+  --bg-primary: #0a0d14;
+  --bg-surface: #111726;
+  --bg-card: rgba(19, 26, 42, 0.75);
+  --bg-glass: rgba(25, 34, 56, 0.6);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(99, 102, 241, 0.4);
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --accent-blue: #38bdf8;
+  --accent-indigo: #6366f1;
+  --accent-purple: #a855f7;
+
+  /* Traffic Light Colors - Unlit */
+  --light-red-off: #2c0b0e;
+  --light-amber-off: #2d1e05;
+  --light-green-off: #062315;
+
+  /* Traffic Light Colors - Lit */
+  --light-red-on: #ff2a3b;
+  --light-red-core: #ff858d;
+  --light-amber-on: #ffb01f;
+  --light-amber-core: #ffe39a;
+  --light-green-on: #10b981;
+  --light-green-core: #86efac;
+
+  /* Bloom Shadows */
+  --glow-red: 0 0 30px rgba(255, 42, 59, 0.8), 0 0 60px rgba(255, 42, 59, 0.5), 0 0 100px rgba(255, 42, 59, 0.3);
+  --glow-amber: 0 0 30px rgba(255, 176, 31, 0.8), 0 0 60px rgba(255, 176, 31, 0.5), 0 0 100px rgba(255, 176, 31, 0.3);
+  --glow-green: 0 0 30px rgba(16, 185, 129, 0.8), 0 0 60px rgba(16, 185, 129, 0.5), 0 0 100px rgba(16, 185, 129, 0.3);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-full: 9999px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   PHOTOREALISTIC TRAFFIC LIGHT COMPONENT
+   ============================================================ */
+.traffic-light-assembly {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* Backplate / Mounting post outline */
+.traffic-light-backplate {
+  background: radial-gradient(circle at center, #1b202a 0%, #0d1017 100%);
+  border: 2px solid #283040;
+  border-radius: 46px;
+  padding: 24px 22px;
+  box-shadow: 
+    0 25px 60px -15px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  position: relative;
+  z-index: 2;
+  transition: transform 0.3s ease;
+}
+
+/* Visor & Lens Unit */
+.signal-unit {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 3D Curved Visor / Sun Hood */
+.signal-visor {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 142px;
+  height: 60px;
+  border-radius: 70px 70px 0 0;
+  background: linear-gradient(180deg, #2d3648 0%, #151a24 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
+  box-shadow: 
+    0 6px 14px rgba(0, 0, 0, 0.6),
+    inset 0 2px 3px rgba(255, 255, 255, 0.15);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.signal-visor::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 4px;
+  right: 4px;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Circular Lamp Casing */
+.lens-bezel {
+  width: 126px;
+  height: 126px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #181d28 0%, #0e1118 100%);
+  border: 3px solid #232a39;
+  box-shadow: 
+    inset 0 4px 8px rgba(0, 0, 0, 0.8),
+    0 2px 4px rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+}
+
+/* Lens Glass with Fresnel Dot Matrix Pattern */
+.lens {
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background-size: 8px 8px;
+  background-image: 
+    radial-gradient(circle, rgba(255, 255, 255, 0.15) 1.5px, transparent 1.5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Glass Reflection Sheen */
+.lens::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 18px;
+  width: 72px;
+  height: 36px;
+  border-radius: 50% / 40%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Inner LED Core */
+.lens::after {
+  content: '';
+  position: absolute;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  filter: blur(4px);
+}
+
+/* ------------------------------------------------------------
+   UNLIT STATES
+   ------------------------------------------------------------ */
+.lens.red {
+  background-color: var(--light-red-off);
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.9);
+}
+.lens.amber {
+  background-color: var(--light-amber-off);
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.9);
+}
+.lens.green {
+  background-color: var(--light-green-off);
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.9);
+}
+
+/* ------------------------------------------------------------
+   LIT STATES & BLOOM GLOWS
+   ------------------------------------------------------------ */
+.lens.red.lit {
+  background-color: var(--light-red-on);
+  box-shadow: 
+    var(--glow-red),
+    inset 0 0 10px #ff7380,
+    inset 0 0 25px #ffffff;
+}
+.lens.red.lit::after {
+  opacity: 1;
+  background-color: var(--light-red-core);
+}
+
+.lens.amber.lit {
+  background-color: var(--light-amber-on);
+  box-shadow: 
+    var(--glow-amber),
+    inset 0 0 10px #ffe18f,
+    inset 0 0 25px #ffffff;
+}
+.lens.amber.lit::after {
+  opacity: 1;
+  background-color: var(--light-amber-core);
+}
+
+.lens.green.lit {
+  background-color: var(--light-green-on);
+  box-shadow: 
+    var(--glow-green),
+    inset 0 0 10px #7ef9c5,
+    inset 0 0 25px #ffffff;
+}
+.lens.green.lit::after {
+  opacity: 1;
+  background-color: var(--light-green-core);
+}
+
+/* Flashing Amber Animation */
+@keyframes blink-amber {
+  0%, 100% {
+    background-color: var(--light-amber-on);
+    box-shadow: var(--glow-amber), inset 0 0 10px #ffe18f, inset 0 0 25px #ffffff;
+  }
+  50% {
+    background-color: var(--light-amber-off);
+    box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.9);
+  }
+}
+
+.lens.amber.blinking {
+  animation: blink-amber 1s infinite steps(1, start);
+}
+
+/* Top Mount & Bottom Pole (Realistic Decor) */
+.pole-top {
+  width: 32px;
+  height: 18px;
+  background: linear-gradient(180deg, #1c222e 0%, #11151e 100%);
+  border: 1px solid #283040;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+}
+.pole-bottom {
+  width: 38px;
+  height: 40px;
+  background: linear-gradient(90deg, #181d28 0%, #2a3344 50%, #181d28 100%);
+  border: 1px solid #283040;
+  border-top: none;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
+}
+
+/* Connection Status Badge */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  font-size: 0.82rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+  transition: all 0.3s ease;
+}
+
+.status-dot.connected {
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+}
+
+.status-dot.connecting {
+  background: #f59e0b;
+  box-shadow: 0 0 10px #f59e0b;
+  animation: pulse 1.5s infinite;
+}
+
+.status-dot.disconnected {
+  background: #ef4444;
+  box-shadow: 0 0 10px #ef4444;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
