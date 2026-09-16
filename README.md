@@ -11,14 +11,29 @@ A modern, cloud-native **Traffic Light Controller** microservice built with **Qu
   * **Operator Console (`/control.html`)**: Mission control deck with manual phase overrides, mode toggles (`AUTO`, `MANUAL`, `EMERGENCY`), multi-key administration, live cURL generator, and streaming HTTP traffic logs.
 * **Real-Time Synchronization (SSE)**:
   * State changes made by external REST clients (`curl`, Postman, IoT devices) are instantly pushed to the browser over `/api/traffic-light/events` with zero lag.
-* **Multi-Key Security & Access Control**:
-  * Mutations require `X-API-KEY` or `Authorization: Bearer <token>`.
-  * Pre-configured keys: `admin-key-2026`, `operator-key-2026`, `dispatch-key-2026`.
-  * Full key management API (`/api/keys`) to dynamically create, list, and revoke keys.
-* **Interactive Swagger UI**:
-  * OpenAPI spec and Swagger UI at `/q/swagger-ui/` with built-in **Authorize** button.
-* **Container & Cloud Ready**:
-  * Multi-stage Dockerfile built on Eclipse Temurin 21 JRE Alpine, non-root user (UID 1000), dynamic port routing (`${PORT:8080}`), tailored for Google Cloud Run.
+## 🔐 Authentication & Security
+
+The system enforces authentication across both web consoles and REST APIs:
+
+### 1. HTTP Basic Auth (User & Password)
+Used to log into the **Backend Operator Console** (`/control.html`), **Swagger UI** (`/q/swagger-ui/`), or call REST APIs directly:
+
+| Username | Default Password | Role | Permissions |
+| :--- | :--- | :--- | :--- |
+| `admin` | `admin123` | `ADMIN` | Full control: Access Console, Swagger UI, control lights, manage API keys |
+| `operator` | `operator123` | `OPERATOR` | Access Console, Swagger UI, control lights |
+
+*Passwords can be customized via environment variables `ADMIN_PASSWORD` and `OPERATOR_PASSWORD`.*
+
+### 2. Multi-Tenant API Keys
+External REST clients can also authenticate using the `X-API-KEY` header (or `Authorization: Bearer <key>`):
+* Default keys: `admin-key-2026`, `operator-key-2026`, `dispatch-key-2026`.
+* Dynamic keys can be generated and revoked at `/api/keys` or from the Operator Console.
+
+### 3. Public vs. Protected Endpoints
+* **Public**: Frontend Display Screen (`/`), CSS/JS assets, `GET /api/traffic-light/state`, `GET /api/traffic-light/events` (SSE).
+* **Protected by User & Password**: Operator Console (`/control.html`), Swagger UI (`/q/swagger-ui*`), OpenAPI Spec (`/q/openapi*`).
+* **Protected by User/Pass OR API Key**: All mutation REST endpoints (`POST /api/traffic-light/*`, `POST /api/keys`, `DELETE /api/keys/*`).
 
 ---
 

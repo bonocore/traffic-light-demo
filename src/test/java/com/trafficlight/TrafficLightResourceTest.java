@@ -25,6 +25,14 @@ public class TrafficLightResourceTest {
     }
 
     @Test
+    public void testPublicDisplayScreenReturns200() {
+        given()
+            .when().get("/")
+            .then()
+            .statusCode(200);
+    }
+
+    @Test
     public void testSecuredStateWithoutKeyReturns401() {
         given()
             .contentType(ContentType.JSON)
@@ -48,7 +56,7 @@ public class TrafficLightResourceTest {
     }
 
     @Test
-    public void testSecuredStateWithValidKeySucceeds() {
+    public void testSecuredStateWithValidApiKeySucceeds() {
         given()
             .header("X-API-KEY", "admin-key-2026")
             .contentType(ContentType.JSON)
@@ -58,6 +66,52 @@ public class TrafficLightResourceTest {
             .statusCode(200)
             .body("state", equalTo("GREEN"))
             .body("mode", equalTo("MANUAL"));
+    }
+
+    @Test
+    public void testSecuredStateWithBasicAuthSucceeds() {
+        given()
+            .auth().preemptive().basic("admin", "admin123")
+            .contentType(ContentType.JSON)
+            .body(new StateChangeRequest(LightState.AMBER))
+            .when().post("/api/traffic-light/state")
+            .then()
+            .statusCode(200)
+            .body("state", equalTo("AMBER"));
+    }
+
+    @Test
+    public void testControlHtmlProtectedWithoutAuthReturns401() {
+        given()
+            .when().get("/control.html")
+            .then()
+            .statusCode(401);
+    }
+
+    @Test
+    public void testControlHtmlWithBasicAuthReturns200() {
+        given()
+            .auth().preemptive().basic("admin", "admin123")
+            .when().get("/control.html")
+            .then()
+            .statusCode(200);
+    }
+
+    @Test
+    public void testSwaggerUiProtectedWithoutAuthReturns401() {
+        given()
+            .when().get("/q/swagger-ui/")
+            .then()
+            .statusCode(401);
+    }
+
+    @Test
+    public void testSwaggerUiWithBasicAuthReturns200() {
+        given()
+            .auth().preemptive().basic("admin", "admin123")
+            .when().get("/q/swagger-ui/")
+            .then()
+            .statusCode(200);
     }
 
     @Test

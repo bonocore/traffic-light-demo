@@ -2,6 +2,7 @@ package com.trafficlight.security;
 
 import com.trafficlight.model.ApiKey;
 import com.trafficlight.service.ApiKeyService;
+import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;
@@ -12,6 +13,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
@@ -25,8 +27,27 @@ public class ApiKeyFilter implements ContainerRequestFilter {
     @Inject
     ApiKeyService apiKeyService;
 
+    @Inject
+    SecurityIdentity securityIdentity;
+
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
+        // 1. Check if user is already authenticated via HTTP Basic Auth (Username / Password)
+        if (securityIdentity != null && !securityIdentity.isAnonymous() && securityIdentity.getPrincipal() != null) {
+            String username = securityIdentity.getPrincipal().getName();
+            String role = securityIdentity.hasRole("admin") ? "ADMIN" : "OPERATOR";
+            requestContext.setProperty(AUTHENTICATED_KEY_PROP, new ApiKey(
+                "user-" + username,
+                "basic-auth",
+                username + " (Basic Auth)",
+                role,
+                true,
+                Instant.now()
+            ));
+            return;
+        }
+
+        // 2. Otherwise, check X-API-KEY or Bearer token
         String apiKey = requestContext.getHeaderString("X-API-KEY");
         if (apiKey == null || apiKey.isBlank()) {
             apiKey = requestContext.getHeaderString("X-Api-Key");
@@ -41,7 +62,7 @@ public class ApiKeyFilter implements ContainerRequestFilter {
         }
 
         if (apiKey == null || apiKey.isBlank()) {
-            abortUnauthorized(requestContext, "Missing API key. Provide header 'X-API-KEY: <key>' or 'Authorization: Bearer <key>'");
+            abortUnauthorized(requestContext, "Missing credentials. Provide HTTP Basic Auth (User & Password) or header 'X-API-KEY: <key>'");
             return;
         }
 
