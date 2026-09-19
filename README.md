@@ -69,14 +69,16 @@ X-API-KEY: admin-key-2026
 
 | Method | Endpoint | Security | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/traffic-light/state` | Public | Get active light state, mode, and countdown |
+| `GET` | `/api/traffic-light/state` | Public | Get active light state, mode, countdown, and timestamp |
+| `GET` | `/api/traffic-light/color` | Public | Alias for `/state` |
 | `GET` | `/api/traffic-light/mode` | Public | Get current operating mode and list of supported modes |
 | `GET` | `/api/traffic-light/modes` | Public | List all supported operating modes (`AUTO`, `MANUAL`, `EMERGENCY`) |
 | `GET` | `/api/traffic-light/colors` | Public | List all supported light colors/states to use when setting state |
 | `GET` | `/api/traffic-light/states` | Public | Alias for `/colors` |
 | `GET` | `/api/traffic-light/events` | Public | Real-time Server-Sent Events (SSE) stream |
-| `POST` | `/api/traffic-light/state` | **Secured** | Set manual state (`RED`, `AMBER`, `GREEN`, `FLASHING_AMBER`, `OFF`) |
-| `POST` | `/api/traffic-light/mode` | **Secured** | Set mode (`AUTO`, `MANUAL`, `EMERGENCY`) |
+| `POST` | `/api/traffic-light/state` | **Secured** | Set light state/color and optionally mode |
+| `POST` | `/api/traffic-light/color` | **Secured** | Alias for `/state` (accepts `color` and optional `mode`) |
+| `POST` | `/api/traffic-light/mode` | **Secured** | Set mode (`AUTO`, `MANUAL`, `EMERGENCY`) and optionally color |
 | `POST` | `/api/traffic-light/next` | **Secured** | Advance to next logical phase |
 | `GET` | `/api/keys` | **Secured** | List all registered API keys |
 | `POST` | `/api/keys` | **Secured** | Generate a new API key with name and role |
@@ -93,28 +95,34 @@ curl http://localhost:7860/api/traffic-light/colors
 curl http://localhost:7860/api/traffic-light/mode
 # Output: {"mode":"AUTO","supportedModes":["AUTO","MANUAL","EMERGENCY"]}
 
-# 3. Read current full state
-curl http://localhost:7860/api/traffic-light/state
+# 3. Read current full state or color
+curl http://localhost:7860/api/traffic-light/color
 
-# 4. Set light to GREEN (Authorized via API Key)
-curl -X POST http://localhost:7860/api/traffic-light/state \
+# 4. Set light color only (Defaults mode to MANUAL)
+curl -X POST http://localhost:7860/api/traffic-light/color \
   -H "X-API-KEY: admin-key-2026" \
   -H "Content-Type: application/json" \
-  -d '{"state": "GREEN"}'
+  -d '{"color": "GREEN"}'
 
-# 5. Set operation mode (Authorized via HTTP Basic Auth)
+# 5. Set operation mode only
 curl -X POST http://localhost:7860/api/traffic-light/mode \
   -u admin:admin123 \
   -H "Content-Type: application/json" \
-  -d '{"mode": "MANUAL"}'
+  -d '{"mode": "AUTO"}'
 
-# 6. Trigger Emergency All-Stop
+# 6. Set BOTH color and mode simultaneously in one call!
+curl -X POST http://localhost:7860/api/traffic-light/color \
+  -H "X-API-KEY: admin-key-2026" \
+  -H "Content-Type: application/json" \
+  -d '{"color": "AMBER", "mode": "AUTO"}'
+
+# 7. Trigger Emergency All-Stop (forces RED and EMERGENCY mode)
 curl -X POST http://localhost:7860/api/traffic-light/mode \
   -H "X-API-KEY: dispatch-key-2026" \
   -H "Content-Type: application/json" \
   -d '{"mode": "EMERGENCY"}'
 
-# 7. Generate a new API key
+# 8. Generate a new API key
 curl -X POST http://localhost:7860/api/keys \
   -u admin:admin123 \
   -H "Content-Type: application/json" \

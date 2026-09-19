@@ -89,10 +89,19 @@ public class TrafficLightResource {
         return trafficLightService.getEventStream();
     }
 
+    @GET
+    @Path("/color")
+    @Operation(summary = "Get current light color and status (alias for /state)", description = "Public endpoint to read active color, mode, countdown, and timestamp")
+    @APIResponse(responseCode = "200", description = "Current traffic light status")
+    @org.eclipse.microprofile.openapi.annotations.security.SecurityRequirements()
+    public TrafficLightStatus getColor() {
+        return trafficLightService.getStatus();
+    }
+
     @POST
     @Path("/state")
     @Secured
-    @Operation(summary = "Set manual light state", description = "Secured: Sets the light to RED, AMBER, GREEN, FLASHING_AMBER, or OFF. Switches mode to MANUAL.")
+    @Operation(summary = "Set light state and optional mode", description = "Secured: Sets the light to RED, AMBER, GREEN, FLASHING_AMBER, or OFF. Optionally specify mode (MANUAL, AUTO, EMERGENCY); defaults to MANUAL.")
     @org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement(name = "ApiKeyAuth")
     @org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement(name = "BasicAuth")
     @APIResponse(responseCode = "200", description = "State successfully updated")
@@ -100,18 +109,35 @@ public class TrafficLightResource {
     public Response setState(StateChangeRequest request, @Context ContainerRequestContext context) {
         if (request == null || request.state() == null) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity("{\"error\": \"State is required\"}").build();
+                .entity("{\"error\": \"State/color is required\"}").build();
         }
         ApiKey caller = (ApiKey) context.getProperty(ApiKeyFilter.AUTHENTICATED_KEY_PROP);
         String callerName = caller != null ? caller.name() : "Authorized Client";
-        TrafficLightStatus status = trafficLightService.setLightState(request.state(), callerName);
+        TrafficLightStatus status;
+        if (request.mode() != null) {
+            status = trafficLightService.setLightAndMode(request.state(), request.mode(), callerName);
+        } else {
+            status = trafficLightService.setLightState(request.state(), callerName);
+        }
         return Response.ok(status).build();
+    }
+
+    @POST
+    @Path("/color")
+    @Secured
+    @Operation(summary = "Set light color and optional mode (alias for /state)", description = "Secured: Sets the light to RED, AMBER, GREEN, FLASHING_AMBER, or OFF. Optionally specify mode (MANUAL, AUTO, EMERGENCY); defaults to MANUAL.")
+    @org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement(name = "ApiKeyAuth")
+    @org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement(name = "BasicAuth")
+    @APIResponse(responseCode = "200", description = "Color successfully updated")
+    @APIResponse(responseCode = "401", description = "Unauthorized - Missing or invalid API key")
+    public Response setColor(StateChangeRequest request, @Context ContainerRequestContext context) {
+        return setState(request, context);
     }
 
     @POST
     @Path("/mode")
     @Secured
-    @Operation(summary = "Change operation mode", description = "Secured: Sets operation mode to AUTO, MANUAL, or EMERGENCY.")
+    @Operation(summary = "Change operation mode and optional light state", description = "Secured: Sets operation mode to AUTO, MANUAL, or EMERGENCY. Optionally specify state/color in the same request.")
     @org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement(name = "ApiKeyAuth")
     @org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement(name = "BasicAuth")
     @APIResponse(responseCode = "200", description = "Mode successfully updated")
@@ -123,7 +149,12 @@ public class TrafficLightResource {
         }
         ApiKey caller = (ApiKey) context.getProperty(ApiKeyFilter.AUTHENTICATED_KEY_PROP);
         String callerName = caller != null ? caller.name() : "Authorized Client";
-        TrafficLightStatus status = trafficLightService.setMode(request.mode(), callerName);
+        TrafficLightStatus status;
+        if (request.state() != null) {
+            status = trafficLightService.setLightAndMode(request.state(), request.mode(), callerName);
+        } else {
+            status = trafficLightService.setMode(request.mode(), callerName);
+        }
         return Response.ok(status).build();
     }
 

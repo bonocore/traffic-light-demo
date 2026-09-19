@@ -144,6 +144,52 @@ public class TrafficLightService {
         return updated;
     }
 
+    public synchronized TrafficLightStatus setLightAndMode(LightState newState, OperationMode newMode, String operatorName) {
+        OperationMode mode = (newMode != null) ? newMode : OperationMode.MANUAL;
+        LightState state = (newState != null) ? newState : statusRef.get().state();
+
+        TrafficLightStatus updated;
+        switch (mode) {
+            case AUTO -> {
+                int duration = (state == LightState.AMBER) ? AMBER_DURATION :
+                               (state == LightState.GREEN) ? GREEN_DURATION : RED_DURATION;
+                updated = new TrafficLightStatus(
+                    state,
+                    OperationMode.AUTO,
+                    duration,
+                    duration,
+                    Instant.now(),
+                    "Set to " + state + " (AUTO cycle)" + (operatorName != null ? " by " + operatorName : "")
+                );
+            }
+            case EMERGENCY -> {
+                updated = new TrafficLightStatus(
+                    LightState.RED,
+                    OperationMode.EMERGENCY,
+                    0,
+                    0,
+                    Instant.now(),
+                    "EMERGENCY OVERRIDE: All Stop (RED)" + (operatorName != null ? " by " + operatorName : "")
+                );
+            }
+            case MANUAL -> {
+                updated = new TrafficLightStatus(
+                    state,
+                    OperationMode.MANUAL,
+                    0,
+                    0,
+                    Instant.now(),
+                    "Manual override to " + state + (operatorName != null ? " by " + operatorName : "")
+                );
+            }
+            default -> throw new IllegalStateException("Unexpected mode: " + mode);
+        }
+
+        statusRef.set(updated);
+        eventProcessor.onNext(updated);
+        return updated;
+    }
+
     public synchronized TrafficLightStatus setMode(OperationMode newMode, String operatorName) {
         if (newMode == null) {
             throw new IllegalArgumentException("Mode cannot be null");

@@ -1,3 +1,14 @@
 package com.trafficlight.model;
 
-public record ModeChangeRequest(OperationMode mode) {}
+import com.fasterxml.jackson.annotation.JsonAlias;
+
+public record ModeChangeRequest(
+    OperationMode mode,
+
+    @JsonAlias({"color", "state", "lightColor", "lightState"})
+    LightState state
+) {
+    public ModeChangeRequest(OperationMode mode) {
+        this(mode, null);
+    }
+}

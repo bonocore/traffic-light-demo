@@ -195,4 +195,53 @@ public class TrafficLightResourceTest {
             .statusCode(200)
             .body("state", notNullValue());
     }
+
+    @Test
+    public void testPublicGetColor() {
+        given()
+            .when().get("/api/traffic-light/color")
+            .then()
+            .statusCode(200)
+            .body("state", notNullValue())
+            .body("mode", notNullValue());
+    }
+
+    @Test
+    public void testSetColorEndpoint() {
+        given()
+            .header("X-API-KEY", "admin-key-2026")
+            .contentType(ContentType.JSON)
+            .body("{\"color\": \"GREEN\"}")
+            .when().post("/api/traffic-light/color")
+            .then()
+            .statusCode(200)
+            .body("state", equalTo("GREEN"))
+            .body("mode", equalTo("MANUAL"));
+    }
+
+    @Test
+    public void testSetColorAndModeTogetherInStateEndpoint() {
+        given()
+            .header("X-API-KEY", "admin-key-2026")
+            .contentType(ContentType.JSON)
+            .body("{\"color\": \"AMBER\", \"mode\": \"AUTO\"}")
+            .when().post("/api/traffic-light/state")
+            .then()
+            .statusCode(200)
+            .body("state", equalTo("AMBER"))
+            .body("mode", equalTo("AUTO"));
+    }
+
+    @Test
+    public void testSetModeAndColorTogetherInModeEndpoint() {
+        given()
+            .auth().preemptive().basic("admin", "admin123")
+            .contentType(ContentType.JSON)
+            .body("{\"mode\": \"MANUAL\", \"color\": \"RED\"}")
+            .when().post("/api/traffic-light/mode")
+            .then()
+            .statusCode(200)
+            .body("state", equalTo("RED"))
+            .body("mode", equalTo("MANUAL"));
+    }
 }
