@@ -127,6 +127,65 @@ public class TrafficLightResourceTest {
     }
 
     @Test
+    public void testPublicGetMode() {
+        given()
+            .when().get("/api/traffic-light/mode")
+            .then()
+            .statusCode(200)
+            .body("mode", notNullValue())
+            .body("supportedModes", hasItems("AUTO", "MANUAL", "EMERGENCY"));
+    }
+
+    @Test
+    public void testPublicGetModes() {
+        given()
+            .when().get("/api/traffic-light/modes")
+            .then()
+            .statusCode(200)
+            .body("$", hasItems("AUTO", "MANUAL", "EMERGENCY"));
+    }
+
+    @Test
+    public void testPublicGetColors() {
+        given()
+            .when().get("/api/traffic-light/colors")
+            .then()
+            .statusCode(200)
+            .body("$", hasItems("RED", "AMBER", "GREEN", "FLASHING_AMBER", "OFF"));
+    }
+
+    @Test
+    public void testPublicGetStates() {
+        given()
+            .when().get("/api/traffic-light/states")
+            .then()
+            .statusCode(200)
+            .body("$", hasItems("RED", "AMBER", "GREEN", "FLASHING_AMBER", "OFF"));
+    }
+
+    @Test
+    public void testSecuredModeChangeWithoutAuthReturns401() {
+        given()
+            .contentType(ContentType.JSON)
+            .body(new ModeChangeRequest(OperationMode.MANUAL))
+            .when().post("/api/traffic-light/mode")
+            .then()
+            .statusCode(401);
+    }
+
+    @Test
+    public void testSecuredModeChangeWithBasicAuth() {
+        given()
+            .auth().preemptive().basic("operator", "operator123")
+            .contentType(ContentType.JSON)
+            .body(new ModeChangeRequest(OperationMode.EMERGENCY))
+            .when().post("/api/traffic-light/mode")
+            .then()
+            .statusCode(200)
+            .body("mode", equalTo("EMERGENCY"));
+    }
+
+    @Test
     public void testAdvanceNextPhase() {
         given()
             .header("X-API-KEY", "dispatch-key-2026")

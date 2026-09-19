@@ -20,6 +20,7 @@ import java.util.Map;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "API Key Management", description = "Operations for creating, listing, and revoking API keys")
 @org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement(name = "ApiKeyAuth")
+@org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement(name = "BasicAuth")
 public class ApiKeyResource {
 
     @Inject

@@ -7,3 +7,8 @@ target/
 .settings/
 .vscode/
 .DS_Store
+.devrev_config.json
+*.py
+confluence_kb_data/
+zendesk_mock_data/
+traffic_light_openapi.json

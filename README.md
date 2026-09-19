@@ -70,6 +70,10 @@ X-API-KEY: admin-key-2026
 | Method | Endpoint | Security | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/traffic-light/state` | Public | Get active light state, mode, and countdown |
+| `GET` | `/api/traffic-light/mode` | Public | Get current operating mode and list of supported modes |
+| `GET` | `/api/traffic-light/modes` | Public | List all supported operating modes (`AUTO`, `MANUAL`, `EMERGENCY`) |
+| `GET` | `/api/traffic-light/colors` | Public | List all supported light colors/states to use when setting state |
+| `GET` | `/api/traffic-light/states` | Public | Alias for `/colors` |
 | `GET` | `/api/traffic-light/events` | Public | Real-time Server-Sent Events (SSE) stream |
 | `POST` | `/api/traffic-light/state` | **Secured** | Set manual state (`RED`, `AMBER`, `GREEN`, `FLASHING_AMBER`, `OFF`) |
 | `POST` | `/api/traffic-light/mode` | **Secured** | Set mode (`AUTO`, `MANUAL`, `EMERGENCY`) |
@@ -81,24 +85,38 @@ X-API-KEY: admin-key-2026
 ### Quick cURL Examples
 
 ```bash
-# 1. Read current state
+# 1. Discover supported colors to use when setting state
+curl http://localhost:7860/api/traffic-light/colors
+# Output: ["RED","AMBER","GREEN","FLASHING_AMBER","OFF"]
+
+# 2. Get current operation mode
+curl http://localhost:7860/api/traffic-light/mode
+# Output: {"mode":"AUTO","supportedModes":["AUTO","MANUAL","EMERGENCY"]}
+
+# 3. Read current full state
 curl http://localhost:7860/api/traffic-light/state
 
-# 2. Change light to GREEN (Authorized)
+# 4. Set light to GREEN (Authorized via API Key)
 curl -X POST http://localhost:7860/api/traffic-light/state \
   -H "X-API-KEY: admin-key-2026" \
   -H "Content-Type: application/json" \
   -d '{"state": "GREEN"}'
 
-# 3. Trigger Emergency All-Stop
+# 5. Set operation mode (Authorized via HTTP Basic Auth)
+curl -X POST http://localhost:7860/api/traffic-light/mode \
+  -u admin:admin123 \
+  -H "Content-Type: application/json" \
+  -d '{"mode": "MANUAL"}'
+
+# 6. Trigger Emergency All-Stop
 curl -X POST http://localhost:7860/api/traffic-light/mode \
   -H "X-API-KEY: dispatch-key-2026" \
   -H "Content-Type: application/json" \
   -d '{"mode": "EMERGENCY"}'
 
-# 4. Generate a new API key
+# 7. Generate a new API key
 curl -X POST http://localhost:7860/api/keys \
-  -H "X-API-KEY: admin-key-2026" \
+  -u admin:admin123 \
   -H "Content-Type: application/json" \
   -d '{"name": "Highway Camera 4", "role": "OPERATOR"}'
 ```
