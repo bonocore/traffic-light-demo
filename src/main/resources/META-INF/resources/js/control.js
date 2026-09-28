@@ -19,11 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const newKeyName = document.getElementById('new-key-name');
   const newKeyRole = document.getElementById('new-key-role');
 
-  // cURL & Terminal Elements
-  const curlCode = document.getElementById('curl-code');
-  const btnCopyCurl = document.getElementById('btn-copy-curl');
-  const terminalLogs = document.getElementById('terminal-logs');
-  const btnClearLogs = document.getElementById('btn-clear-logs');
+
 
   let activeApiKey = localStorage.getItem('traffic_active_key') || 'admin-key-2026';
   let keysList = [];
@@ -115,13 +111,17 @@ document.addEventListener('DOMContentLoaded', () => {
   initCollapsible(cardDebugger, btnCollapseCard4, 'traffic_card4_collapsed');
 
   // ------------------------------------------------------------
-  // Server-Side Request Debugger (Last 10 Requests)
+  // Server-Side Request Debugger (Incoming REST Requests)
   // ------------------------------------------------------------
   const debugRequestsContainer = document.getElementById('debug-requests-container');
   const debugLastUpdated = document.getElementById('debug-last-updated');
   const btnClearDebugLogs = document.getElementById('btn-clear-debug-logs');
+  const btnManualRefreshDebug = document.getElementById('btn-manual-refresh-debug');
+  const refreshIcon = document.getElementById('refresh-icon');
 
-  let openPayloadIds = new Set();
+  let openReqPayloadIds = new Set();
+  let openRespPayloadIds = new Set();
+  let debugEventSource = null;
 
   async function fetchDebugRequests() {
     if (!debugRequestsContainer) return;
@@ -141,13 +141,23 @@ document.addEventListener('DOMContentLoaded', () => {
       const logs = await res.json();
       renderDebugRequests(logs);
     } catch (err) {
-      // Silent error during polling
+      // Silent error during background poll/refresh
+    }
+  }
+
+  function formatPayload(raw) {
+    if (!raw) return '';
+    try {
+      const parsed = JSON.parse(raw);
+      return escapeHtml(JSON.stringify(parsed, null, 2));
+    } catch (e) {
+      return escapeHtml(raw);
     }
   }
 
   function renderDebugRequests(logs) {
     if (!logs || logs.length === 0) {
-      debugRequestsContainer.innerHTML = '<div class="debug-empty-state">No requests recorded yet. Incoming REST API calls will appear here in real-time.</div>';
+      debugRequestsContainer.innerHTML = '<div class="debug-empty-state">No requests recorded yet. Incoming REST API calls will appear here automatically.</div>';
       if (debugLastUpdated) {
         debugLastUpdated.textContent = 'Updated ' + new Date().toLocaleTimeString();
       }
@@ -161,8 +171,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const timeStr = req.timestamp ? new Date(req.timestamp).toLocaleTimeString() : '--:--:--';
       const statusClass = req.status >= 200 && req.status < 300 ? 's2xx' : 's4xx';
-      const hasPayload = req.payload && req.payload.trim().length > 0;
-      const isPayloadOpen = openPayloadIds.has(req.id);
+      const hasReq = req.requestPayload && req.requestPayload.trim().length > 0;
+      const hasResp = req.responsePayload && req.responsePayload.trim().length > 0;
+
+      const isReqOpen = openReqPayloadIds.has(req.id);
+      const isRespOpen = openRespPayloadIds.has(req.id);
 
       card.innerHTML = `
         <div class="debug-request-top">
@@ -178,21 +191,39 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="debug-request-details">
           <span class="debug-caller">Caller: <strong>${req.caller || 'Public'}</strong></span>
-          ${hasPayload ? `<button type="button" class="btn-payload-toggle" data-req-id="${req.id}">${isPayloadOpen ? 'Hide Payload' : 'View Payload'}</button>` : ''}
+          <div class="debug-payload-actions">
+            ${hasReq ? `<button type="button" class="btn-payload-toggle request" data-type="req" data-req-id="${req.id}">${isReqOpen ? 'Hide Request' : 'Request Body'}</button>` : ''}
+            ${hasResp ? `<button type="button" class="btn-payload-toggle response" data-type="resp" data-req-id="${req.id}">${isRespOpen ? 'Hide Response' : 'Response Body'}</button>` : ''}
+          </div>
         </div>
-        ${hasPayload ? `<pre class="debug-payload-box ${isPayloadOpen ? 'visible' : ''}" id="payload-${req.id}">${escapeHtml(req.payload)}</pre>` : ''}
+        ${hasReq ? `<pre class="debug-payload-box request ${isReqOpen ? 'visible' : ''}" id="payload-req-${req.id}"><div class="debug-payload-heading">Incoming Request Body:</div>${formatPayload(req.requestPayload)}</pre>` : ''}
+        ${hasResp ? `<pre class="debug-payload-box response ${isRespOpen ? 'visible' : ''}" id="payload-resp-${req.id}"><div class="debug-payload-heading">Outgoing Response Body:</div>${formatPayload(req.responsePayload)}</pre>` : ''}
       `;
 
-      if (hasPayload) {
-        const toggleBtn = card.querySelector('.btn-payload-toggle');
-        const payloadBox = card.querySelector('.debug-payload-box');
+      if (hasReq) {
+        const toggleBtn = card.querySelector('.btn-payload-toggle.request');
+        const box = card.querySelector(`#payload-req-${req.id}`);
         toggleBtn.addEventListener('click', () => {
-          const isOpen = payloadBox.classList.toggle('visible');
-          toggleBtn.textContent = isOpen ? 'Hide Payload' : 'View Payload';
+          const isOpen = box.classList.toggle('visible');
+          toggleBtn.textContent = isOpen ? 'Hide Request' : 'Request Body';
           if (isOpen) {
-            openPayloadIds.add(req.id);
+            openReqPayloadIds.add(req.id);
           } else {
-            openPayloadIds.delete(req.id);
+            openReqPayloadIds.delete(req.id);
+          }
+        });
+      }
+
+      if (hasResp) {
+        const toggleBtn = card.querySelector('.btn-payload-toggle.response');
+        const box = card.querySelector(`#payload-resp-${req.id}`);
+        toggleBtn.addEventListener('click', () => {
+          const isOpen = box.classList.toggle('visible');
+          toggleBtn.textContent = isOpen ? 'Hide Response' : 'Response Body';
+          if (isOpen) {
+            openRespPayloadIds.add(req.id);
+          } else {
+            openRespPayloadIds.delete(req.id);
           }
         });
       }
@@ -201,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (debugLastUpdated) {
-      debugLastUpdated.textContent = 'Updated ' + new Date().toLocaleTimeString();
+      debugLastUpdated.textContent = 'Live Synced ' + new Date().toLocaleTimeString();
     }
   }
 
@@ -210,6 +241,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  // Manual refresh button
+  if (btnManualRefreshDebug) {
+    btnManualRefreshDebug.addEventListener('click', async () => {
+      if (refreshIcon) refreshIcon.classList.add('spinning');
+      await fetchDebugRequests();
+      setTimeout(() => {
+        if (refreshIcon) refreshIcon.classList.remove('spinning');
+      }, 500);
+    });
+  }
+
+  // Clear debug logs
   if (btnClearDebugLogs) {
     btnClearDebugLogs.addEventListener('click', async () => {
       try {
@@ -218,7 +261,8 @@ document.addEventListener('DOMContentLoaded', () => {
           headers: { 'X-API-KEY': activeApiKey },
           credentials: 'same-origin',
         });
-        openPayloadIds.clear();
+        openReqPayloadIds.clear();
+        openRespPayloadIds.clear();
         fetchDebugRequests();
       } catch (err) {
         console.error('Failed to clear debug logs:', err);
@@ -226,38 +270,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ------------------------------------------------------------
-  // Terminal Logging & cURL Generation
-  // ------------------------------------------------------------
-  function logActivity(method, endpoint, status, message, latencyMs) {
-    // Also trigger server-side debug refresh immediately
-    fetchDebugRequests();
-  }
-
-  function setCurlPreview(method, path, payload) {
-    const origin = window.location.origin;
-    let cmd = `curl -i -X ${method} "${origin}${path}" \\\n  -H "X-API-KEY: ${activeApiKey}"`;
-
-    if (payload) {
-      cmd += ` \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify(payload)}'`;
+  // Live Auto-Refresh SSE Connection
+  function connectDebugSSE() {
+    if (debugEventSource) {
+      debugEventSource.close();
     }
 
-    curlCode.textContent = cmd;
+    try {
+      debugEventSource = new EventSource('/api/debug/stream');
+      debugEventSource.onmessage = () => {
+        // Immediate auto-refresh when any request arrives on server!
+        fetchDebugRequests();
+      };
+      debugEventSource.onerror = () => {
+        debugEventSource.close();
+        setTimeout(connectDebugSSE, 4000);
+      };
+    } catch (e) {
+      // Fallback
+    }
   }
-
-  btnCopyCurl.addEventListener('click', () => {
-    navigator.clipboard.writeText(curlCode.textContent).then(() => {
-      const original = btnCopyCurl.textContent;
-      btnCopyCurl.textContent = '✓ Copied!';
-      setTimeout(() => (btnCopyCurl.textContent = original), 1500);
-    });
-  });
 
   // ------------------------------------------------------------
   // Authenticated REST Request Execution
   // ------------------------------------------------------------
   async function callApi(method, path, payload) {
-    setCurlPreview(method, path, payload);
     const start = performance.now();
 
     try {
@@ -283,11 +320,11 @@ document.addEventListener('DOMContentLoaded', () => {
         data = null;
       }
 
-      logActivity(method, path, res.status, data, latencyMs);
+      // Immediately refresh debug logs so user's own call shows up instantly
+      fetchDebugRequests();
       return { status: res.status, data };
     } catch (err) {
-      const latencyMs = Math.round(performance.now() - start);
-      logActivity(method, path, 0, err.message, latencyMs);
+      fetchDebugRequests();
       return { status: 0, error: err.message };
     }
   }
@@ -433,6 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const data = JSON.parse(event.data);
         updatePreview(data);
+        fetchDebugRequests();
       } catch (err) {
         console.error('Error parsing SSE event:', err);
       }
@@ -447,9 +485,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Initial Boot
-  setCurlPreview('POST', '/api/traffic-light/color', { color: 'GREEN' });
   loadKeys();
   connectSSE();
+  connectDebugSSE();
   fetchDebugRequests();
-  setInterval(fetchDebugRequests, 1500);
+  setInterval(fetchDebugRequests, 2000);
 });

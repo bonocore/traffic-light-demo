@@ -1,5 +1,6 @@
 package com.trafficlight.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import java.time.Instant;
 
 public record HttpRequestLog(
@@ -11,5 +12,7 @@ public record HttpRequestLog(
     String caller,
     int status,
     long durationMs,
-    String payload
+    @JsonAlias({"payload", "requestBody"})
+    String requestPayload,
+    String responsePayload
 ) {}

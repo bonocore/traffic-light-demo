@@ -226,17 +226,20 @@
         </div>
       </section>
 
-      <!-- CARD 4: REST API & CURL INSPECTOR / LIVE DEBUGGER -->
+      <!-- CARD 4: REST API & INCOMING REQUEST DEBUGGER -->
       <section class="deck-card collapsible" id="card-debugger" aria-labelledby="inspector-title">
         <div class="card-header">
           <div class="card-header-left">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <h2 id="inspector-title" class="card-title">4. Live REST & Incoming Request Debugger</h2>
-              <span class="debug-live-pill"><span class="live-dot"></span> Live Auditing</span>
+              <h2 id="inspector-title" class="card-title">4. Incoming REST Request Debugger</h2>
+              <span class="debug-live-pill"><span class="live-dot"></span> Auto-Sync</span>
             </div>
-            <p class="card-desc">Inspect exact cURL commands and real-time history of incoming REST requests (last 10 calls)</p>
+            <p class="card-desc">Real-time diagnostic stream of incoming REST requests, callers, latency, and request/response payloads</p>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" class="btn-secondary" id="btn-manual-refresh-debug" title="Refresh incoming requests">
+              <span id="refresh-icon" class="refresh-icon">🔄</span> Refresh
+            </button>
             <button type="button" class="btn-secondary" id="btn-clear-debug-logs" title="Clear request history from memory">Clear History</button>
             <button type="button" class="btn-collapse" id="btn-collapse-card-4" aria-expanded="true" aria-controls="card-4-body">
               <span class="collapse-icon">▲</span>
@@ -246,20 +249,10 @@
         </div>
 
         <div class="card-body" id="card-4-body">
-          <!-- Dynamic cURL box -->
-          <div class="debugger-section-label">Selected Action cURL Template</div>
-          <div class="code-box-wrapper">
-            <button type="button" id="btn-copy-curl" class="btn-copy">Copy cURL</button>
-            <pre id="curl-code" class="code-box">curl -X POST http://localhost:7860/api/traffic-light/color \
-  -H "X-API-KEY: admin-key-2026" \
-  -H "Content-Type: application/json" \
-  -d '{"color": "GREEN"}'</pre>
-          </div>
-
           <!-- Server-side Live Request Debugger Feed -->
-          <div class="debugger-feed-header">
-            <span class="debugger-section-label">Server-Side Incoming REST Request History (Latest 10)</span>
-            <span id="debug-last-updated" class="debug-counter-text">Updated just now</span>
+          <div class="debugger-feed-header" style="margin-top: 0;">
+            <span class="debugger-section-label">Live Incoming REST Requests (Latest 10)</span>
+            <span id="debug-last-updated" class="debug-counter-text">Connected to live stream</span>
           </div>
 
           <div id="debug-requests-container" class="debug-requests-list" aria-label="Incoming REST requests log">

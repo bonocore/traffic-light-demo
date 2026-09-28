@@ -46,7 +46,8 @@ public class DebugResourceTest {
             .body("[0].path", equalTo("/api/traffic-light/color"))
             .body("[0].status", equalTo(200))
             .body("[0].caller", containsString("City Admin Center"))
-            .body("[0].payload", containsString("GREEN"));
+            .body("[0].requestPayload", containsString("GREEN"))
+            .body("[0].responsePayload", containsString("GREEN"));
 
         // Make an unauthenticated request to verify it logs as 401
         given()

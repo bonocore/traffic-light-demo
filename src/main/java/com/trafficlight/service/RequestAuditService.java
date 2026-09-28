@@ -1,6 +1,8 @@
 package com.trafficlight.service;
 
 import com.trafficlight.model.HttpRequestLog;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.operators.multi.processors.BroadcastProcessor;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.ArrayList;
@@ -12,12 +14,18 @@ public class RequestAuditService {
 
     private static final int MAX_LOGS = 30;
     private final ConcurrentLinkedDeque<HttpRequestLog> logs = new ConcurrentLinkedDeque<>();
+    private final BroadcastProcessor<HttpRequestLog> logBroadcaster = BroadcastProcessor.create();
 
     public void record(HttpRequestLog log) {
         logs.addFirst(log);
         while (logs.size() > MAX_LOGS) {
             logs.pollLast();
         }
+        logBroadcaster.onNext(log);
+    }
+
+    public Multi<HttpRequestLog> getStream() {
+        return logBroadcaster;
     }
 
     public List<HttpRequestLog> getRecent(int limit) {

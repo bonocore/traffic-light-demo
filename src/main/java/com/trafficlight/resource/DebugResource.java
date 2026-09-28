@@ -12,6 +12,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import com.trafficlight.security.Secured;
 
+import io.smallrye.mutiny.Multi;
+import org.jboss.resteasy.reactive.RestStreamElementType;
+
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +34,15 @@ public class DebugResource {
     @APIResponse(responseCode = "200", description = "List of recent HTTP request logs")
     public List<HttpRequestLog> getRecentRequests(@QueryParam("limit") @DefaultValue("10") int limit) {
         return requestAuditService.getRecent(limit);
+    }
+
+    @GET
+    @Path("/stream")
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    @RestStreamElementType(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Live incoming request audit stream (SSE)", description = "Pushes new incoming REST requests in real-time as they arrive")
+    public Multi<HttpRequestLog> streamRequests() {
+        return requestAuditService.getStream();
     }
 
     @DELETE

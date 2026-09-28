@@ -3,6 +3,7 @@ package com.trafficlight.security;
 import com.trafficlight.model.ApiKey;
 import com.trafficlight.model.HttpRequestLog;
 import com.trafficlight.service.RequestAuditService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.Priority;
@@ -32,6 +33,9 @@ public class RequestAuditFilter implements ContainerRequestFilter, ContainerResp
 
     @Inject
     RoutingContext routingContext;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -84,8 +88,9 @@ public class RequestAuditFilter implements ContainerRequestFilter, ContainerResp
         // Determine caller identity
         String caller = resolveCaller(requestContext, status);
 
-        // Safely extract request payload if available
-        String payload = extractPayload(requestContext);
+        // Safely extract request payload and response payload if available
+        String requestPayload = extractPayload(requestContext);
+        String responsePayload = extractResponsePayload(responseContext);
 
         HttpRequestLog logEntry = new HttpRequestLog(
             "req-" + UUID.randomUUID().toString().substring(0, 8),
@@ -96,7 +101,8 @@ public class RequestAuditFilter implements ContainerRequestFilter, ContainerResp
             caller,
             status,
             durationMs,
-            payload
+            requestPayload,
+            responsePayload
         );
 
         requestAuditService.record(logEntry);
@@ -156,5 +162,29 @@ public class RequestAuditFilter implements ContainerRequestFilter, ContainerResp
             // Non-fatal if body extraction fails
         }
         return null;
+    }
+
+    private String extractResponsePayload(ContainerResponseContext responseContext) {
+        if (!responseContext.hasEntity()) {
+            return null;
+        }
+        Object entity = responseContext.getEntity();
+        if (entity == null) {
+            return null;
+        }
+
+        try {
+            if (entity instanceof String s) {
+                s = s.trim();
+                return s.length() > 1000 ? s.substring(0, 1000) + "... [truncated]" : s;
+            }
+            if (objectMapper != null) {
+                String json = objectMapper.writeValueAsString(entity);
+                return json.length() > 1000 ? json.substring(0, 1000) + "... [truncated]" : json;
+            }
+            return String.valueOf(entity);
+        } catch (Exception ignored) {
+            return String.valueOf(entity);
+        }
     }
 }
