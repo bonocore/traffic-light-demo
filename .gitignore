@@ -12,3 +12,5 @@ target/
 confluence_kb_data/
 zendesk_mock_data/
 traffic_light_openapi.json
+demo_website.html
+multiservice_pov_deck/

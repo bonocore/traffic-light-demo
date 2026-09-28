@@ -82,25 +82,156 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ------------------------------------------------------------
+  // Collapsible Cards 3 & 4
+  // ------------------------------------------------------------
+  const cardKeyManager = document.getElementById('card-key-manager');
+  const cardDebugger = document.getElementById('card-debugger');
+  const btnCollapseCard3 = document.getElementById('btn-collapse-card-3');
+  const btnCollapseCard4 = document.getElementById('btn-collapse-card-4');
+
+  function initCollapsible(cardElem, btnElem, storageKey) {
+    if (!cardElem || !btnElem) return;
+
+    const isCollapsed = localStorage.getItem(storageKey) === 'true';
+    if (isCollapsed) {
+      cardElem.classList.add('collapsed');
+      btnElem.setAttribute('aria-expanded', 'false');
+      const label = btnElem.querySelector('.collapse-label');
+      if (label) label.textContent = 'Expand';
+    }
+
+    btnElem.addEventListener('click', () => {
+      const currentlyCollapsed = cardElem.classList.toggle('collapsed');
+      btnElem.setAttribute('aria-expanded', String(!currentlyCollapsed));
+      const label = btnElem.querySelector('.collapse-label');
+      if (label) {
+        label.textContent = currentlyCollapsed ? 'Expand' : 'Collapse';
+      }
+      localStorage.setItem(storageKey, String(currentlyCollapsed));
+    });
+  }
+
+  initCollapsible(cardKeyManager, btnCollapseCard3, 'traffic_card3_collapsed');
+  initCollapsible(cardDebugger, btnCollapseCard4, 'traffic_card4_collapsed');
+
+  // ------------------------------------------------------------
+  // Server-Side Request Debugger (Last 10 Requests)
+  // ------------------------------------------------------------
+  const debugRequestsContainer = document.getElementById('debug-requests-container');
+  const debugLastUpdated = document.getElementById('debug-last-updated');
+  const btnClearDebugLogs = document.getElementById('btn-clear-debug-logs');
+
+  let openPayloadIds = new Set();
+
+  async function fetchDebugRequests() {
+    if (!debugRequestsContainer) return;
+
+    try {
+      const res = await fetch('/api/debug/requests?limit=10', {
+        headers: {
+          'X-API-KEY': activeApiKey,
+        },
+        credentials: 'same-origin',
+      });
+
+      if (!res.ok) {
+        return;
+      }
+
+      const logs = await res.json();
+      renderDebugRequests(logs);
+    } catch (err) {
+      // Silent error during polling
+    }
+  }
+
+  function renderDebugRequests(logs) {
+    if (!logs || logs.length === 0) {
+      debugRequestsContainer.innerHTML = '<div class="debug-empty-state">No requests recorded yet. Incoming REST API calls will appear here in real-time.</div>';
+      if (debugLastUpdated) {
+        debugLastUpdated.textContent = 'Updated ' + new Date().toLocaleTimeString();
+      }
+      return;
+    }
+
+    debugRequestsContainer.innerHTML = '';
+    logs.forEach((req) => {
+      const card = document.createElement('div');
+      card.className = 'debug-request-card';
+
+      const timeStr = req.timestamp ? new Date(req.timestamp).toLocaleTimeString() : '--:--:--';
+      const statusClass = req.status >= 200 && req.status < 300 ? 's2xx' : 's4xx';
+      const hasPayload = req.payload && req.payload.trim().length > 0;
+      const isPayloadOpen = openPayloadIds.has(req.id);
+
+      card.innerHTML = `
+        <div class="debug-request-top">
+          <div class="debug-request-main">
+            <span class="debug-time">${timeStr}</span>
+            <span class="debug-method ${req.method}">${req.method}</span>
+            <span class="debug-path">${req.path}</span>
+          </div>
+          <div class="debug-request-meta">
+            <span class="debug-status-pill ${statusClass}">${req.status}</span>
+            <span class="debug-latency">${req.durationMs}ms</span>
+          </div>
+        </div>
+        <div class="debug-request-details">
+          <span class="debug-caller">Caller: <strong>${req.caller || 'Public'}</strong></span>
+          ${hasPayload ? `<button type="button" class="btn-payload-toggle" data-req-id="${req.id}">${isPayloadOpen ? 'Hide Payload' : 'View Payload'}</button>` : ''}
+        </div>
+        ${hasPayload ? `<pre class="debug-payload-box ${isPayloadOpen ? 'visible' : ''}" id="payload-${req.id}">${escapeHtml(req.payload)}</pre>` : ''}
+      `;
+
+      if (hasPayload) {
+        const toggleBtn = card.querySelector('.btn-payload-toggle');
+        const payloadBox = card.querySelector('.debug-payload-box');
+        toggleBtn.addEventListener('click', () => {
+          const isOpen = payloadBox.classList.toggle('visible');
+          toggleBtn.textContent = isOpen ? 'Hide Payload' : 'View Payload';
+          if (isOpen) {
+            openPayloadIds.add(req.id);
+          } else {
+            openPayloadIds.delete(req.id);
+          }
+        });
+      }
+
+      debugRequestsContainer.appendChild(card);
+    });
+
+    if (debugLastUpdated) {
+      debugLastUpdated.textContent = 'Updated ' + new Date().toLocaleTimeString();
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  if (btnClearDebugLogs) {
+    btnClearDebugLogs.addEventListener('click', async () => {
+      try {
+        await fetch('/api/debug/requests', {
+          method: 'DELETE',
+          headers: { 'X-API-KEY': activeApiKey },
+          credentials: 'same-origin',
+        });
+        openPayloadIds.clear();
+        fetchDebugRequests();
+      } catch (err) {
+        console.error('Failed to clear debug logs:', err);
+      }
+    });
+  }
+
+  // ------------------------------------------------------------
   // Terminal Logging & cURL Generation
   // ------------------------------------------------------------
   function logActivity(method, endpoint, status, message, latencyMs) {
-    const time = new Date().toTimeString().split(' ')[0];
-    const entry = document.createElement('div');
-    entry.className = 'log-entry';
-
-    const statusClass = status === 200 || status === 201 ? 's200' : 's401';
-
-    entry.innerHTML = `
-      <span class="log-time">[${time}]</span>
-      <span class="log-method">${method}</span>
-      <span class="log-msg">${endpoint}</span>
-      <span class="log-status ${statusClass}">${status}</span>
-      <span class="log-time">(${latencyMs}ms)</span>
-    `;
-
-    terminalLogs.appendChild(entry);
-    terminalLogs.scrollTop = terminalLogs.scrollHeight;
+    // Also trigger server-side debug refresh immediately
+    fetchDebugRequests();
   }
 
   function setCurlPreview(method, path, payload) {
@@ -122,10 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  btnClearLogs.addEventListener('click', () => {
-    terminalLogs.innerHTML = '';
-  });
-
   // ------------------------------------------------------------
   // Authenticated REST Request Execution
   // ------------------------------------------------------------
@@ -145,22 +272,23 @@ document.addEventListener('DOMContentLoaded', () => {
         method,
         headers,
         body: payload ? JSON.stringify(payload) : undefined,
+        credentials: 'same-origin',
       });
 
-      const latency = Math.round(performance.now() - start);
-      const data = await res.json().catch(() => ({}));
-
-      logActivity(method, path, res.status, res.statusText, latency);
-
-      if (!res.ok) {
-        console.warn('API Call returned error:', res.status, data);
+      const latencyMs = Math.round(performance.now() - start);
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (e) {
+        data = null;
       }
 
+      logActivity(method, path, res.status, data, latencyMs);
       return { status: res.status, data };
     } catch (err) {
-      const latency = Math.round(performance.now() - start);
-      logActivity(method, path, 'ERR', err.message, latency);
-      throw err;
+      const latencyMs = Math.round(performance.now() - start);
+      logActivity(method, path, 0, err.message, latencyMs);
+      return { status: 0, error: err.message };
     }
   }
 
@@ -319,7 +447,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Initial Boot
-  setCurlPreview('POST', '/api/traffic-light/state', { state: 'GREEN' });
+  setCurlPreview('POST', '/api/traffic-light/color', { color: 'GREEN' });
   loadKeys();
   connectSSE();
+  fetchDebugRequests();
+  setInterval(fetchDebugRequests, 1500);
 });

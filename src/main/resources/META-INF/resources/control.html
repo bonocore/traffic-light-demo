@@ -161,91 +161,109 @@
       </section>
 
       <!-- CARD 3: MULTI-KEY MANAGEMENT -->
-      <section class="deck-card" aria-labelledby="keys-title">
+      <section class="deck-card collapsible" id="card-key-manager" aria-labelledby="keys-title">
         <div class="card-header">
-          <div>
+          <div class="card-header-left">
             <h2 id="keys-title" class="card-title">3. Multi-Key Access Manager</h2>
             <p class="card-desc">Manage API credentials for external integrations, police dispatch, and IoT sensors</p>
           </div>
-        </div>
-
-        <!-- Active Key Signing Selector -->
-        <div class="key-selector-bar">
-          <div class="selector-group">
-            <label for="active-key-select">Dashboard Active Signing Key:</label>
-            <select id="active-key-select" class="key-select" aria-label="Select active API key">
-              <!-- Dynamically populated -->
-            </select>
-          </div>
-          <span style="font-size: 0.8rem; color: var(--text-muted);">
-            Requests from this dashboard will be signed with this key
-          </span>
-        </div>
-
-        <!-- Registered Keys Table -->
-        <div class="keys-table-container">
-          <table class="keys-table" aria-label="Registered API Keys">
-            <thead>
-              <tr>
-                <th>Key Name</th>
-                <th>Role</th>
-                <th>Secret Token</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="keys-table-body">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Create Key Form -->
-        <form id="create-key-form" class="create-key-form">
-          <div class="form-group">
-            <label for="new-key-name">New Key Label / Consumer Name</label>
-            <input type="text" id="new-key-name" class="form-control" placeholder="e.g. North Intersection Camera #5" required>
-          </div>
-          <div class="form-group" style="max-width: 200px;">
-            <label for="new-key-role">Assigned Role</label>
-            <select id="new-key-role" class="form-control">
-              <option value="OPERATOR">OPERATOR</option>
-              <option value="ADMIN">ADMIN</option>
-              <option value="EMERGENCY">EMERGENCY</option>
-            </select>
-          </div>
-          <button type="submit" class="btn-primary" id="btn-create-key">
-            <span>+ Generate API Key</span>
+          <button type="button" class="btn-collapse" id="btn-collapse-card-3" aria-expanded="true" aria-controls="card-3-body">
+            <span class="collapse-icon">▲</span>
+            <span class="collapse-label">Collapse</span>
           </button>
-        </form>
+        </div>
+
+        <div class="card-body" id="card-3-body">
+          <!-- Active Key Signing Selector -->
+          <div class="key-selector-bar">
+            <div class="selector-group">
+              <label for="active-key-select">Dashboard Active Signing Key:</label>
+              <select id="active-key-select" class="key-select" aria-label="Select active API key">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">
+              Requests from this dashboard will be signed with this key
+            </span>
+          </div>
+
+          <!-- Registered Keys Table -->
+          <div class="keys-table-container">
+            <table class="keys-table" aria-label="Registered API Keys">
+              <thead>
+                <tr>
+                  <th>Key Name</th>
+                  <th>Role</th>
+                  <th>Secret Token</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="keys-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Create Key Form -->
+          <form id="create-key-form" class="create-key-form">
+            <div class="form-group">
+              <label for="new-key-name">New Key Label / Consumer Name</label>
+              <input type="text" id="new-key-name" class="form-control" placeholder="e.g. North Intersection Camera #5" required>
+            </div>
+            <div class="form-group" style="max-width: 200px;">
+              <label for="new-key-role">Assigned Role</label>
+              <select id="new-key-role" class="form-control">
+                <option value="OPERATOR">OPERATOR</option>
+                <option value="ADMIN">ADMIN</option>
+                <option value="EMERGENCY">EMERGENCY</option>
+              </select>
+            </div>
+            <button type="submit" class="btn-primary" id="btn-create-key">
+              <span>+ Generate API Key</span>
+            </button>
+          </form>
+        </div>
       </section>
 
-      <!-- CARD 4: REST API & CURL INSPECTOR -->
-      <section class="deck-card" aria-labelledby="inspector-title">
+      <!-- CARD 4: REST API & CURL INSPECTOR / LIVE DEBUGGER -->
+      <section class="deck-card collapsible" id="card-debugger" aria-labelledby="inspector-title">
         <div class="card-header">
-          <div>
-            <h2 id="inspector-title" class="card-title">4. Live REST & cURL Inspector</h2>
-            <p class="card-desc">Inspect exact REST payload commands and live HTTP activity</p>
+          <div class="card-header-left">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <h2 id="inspector-title" class="card-title">4. Live REST & Incoming Request Debugger</h2>
+              <span class="debug-live-pill"><span class="live-dot"></span> Live Auditing</span>
+            </div>
+            <p class="card-desc">Inspect exact cURL commands and real-time history of incoming REST requests (last 10 calls)</p>
           </div>
-          <button type="button" class="btn-secondary" id="btn-clear-logs">Clear Logs</button>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" class="btn-secondary" id="btn-clear-debug-logs" title="Clear request history from memory">Clear History</button>
+            <button type="button" class="btn-collapse" id="btn-collapse-card-4" aria-expanded="true" aria-controls="card-4-body">
+              <span class="collapse-icon">▲</span>
+              <span class="collapse-label">Collapse</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Dynamic cURL box -->
-        <div class="code-box-wrapper">
-          <button type="button" id="btn-copy-curl" class="btn-copy">Copy cURL</button>
-          <pre id="curl-code" class="code-box">curl -X POST http://localhost:7860/api/traffic-light/state \
+        <div class="card-body" id="card-4-body">
+          <!-- Dynamic cURL box -->
+          <div class="debugger-section-label">Selected Action cURL Template</div>
+          <div class="code-box-wrapper">
+            <button type="button" id="btn-copy-curl" class="btn-copy">Copy cURL</button>
+            <pre id="curl-code" class="code-box">curl -X POST http://localhost:7860/api/traffic-light/color \
   -H "X-API-KEY: admin-key-2026" \
   -H "Content-Type: application/json" \
-  -d '{"state": "GREEN"}'</pre>
-        </div>
+  -d '{"color": "GREEN"}'</pre>
+          </div>
 
-        <!-- Real-time HTTP Traffic Log -->
-        <div id="terminal-logs" class="traffic-terminal" aria-label="Real-time HTTP Activity Terminal">
-          <div class="log-entry">
-            <span class="log-time">[System]</span>
-            <span class="log-method">INIT</span>
-            <span class="log-msg">Traffic Light Console connected to Quarkus backend</span>
-            <span class="log-status s200">READY</span>
+          <!-- Server-side Live Request Debugger Feed -->
+          <div class="debugger-feed-header">
+            <span class="debugger-section-label">Server-Side Incoming REST Request History (Latest 10)</span>
+            <span id="debug-last-updated" class="debug-counter-text">Updated just now</span>
+          </div>
+
+          <div id="debug-requests-container" class="debug-requests-list" aria-label="Incoming REST requests log">
+            <div class="debug-empty-state">No requests recorded yet. Incoming REST API calls will appear here in real-time.</div>
           </div>
         </div>
       </section>

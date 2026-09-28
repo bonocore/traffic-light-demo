@@ -83,6 +83,8 @@ X-API-KEY: admin-key-2026
 | `GET` | `/api/keys` | **Secured** | List all registered API keys |
 | `POST` | `/api/keys` | **Secured** | Generate a new API key with name and role |
 | `DELETE` | `/api/keys/{id}` | **Secured** | Revoke an API key immediately |
+| `GET` | `/api/debug/requests` | **Secured** | Retrieve recent audited incoming REST requests (supports `?limit=N`) |
+| `DELETE` | `/api/debug/requests` | **Secured** | Clear incoming REST request audit history |
 
 ### Quick cURL Examples
 

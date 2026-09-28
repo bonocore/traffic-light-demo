@@ -244,4 +244,16 @@ public class TrafficLightResourceTest {
             .body("state", equalTo("RED"))
             .body("mode", equalTo("MANUAL"));
     }
+
+    @Test
+    public void testSecuredStateWithBearerTokenSucceeds() {
+        given()
+            .header("Authorization", "Bearer admin-key-2026")
+            .contentType(ContentType.JSON)
+            .body("{\"color\": \"GREEN\"}")
+            .when().post("/api/traffic-light/color")
+            .then()
+            .statusCode(200)
+            .body("state", equalTo("GREEN"));
+    }
 }
